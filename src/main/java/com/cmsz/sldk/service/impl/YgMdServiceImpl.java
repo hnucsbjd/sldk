@@ -26,7 +26,6 @@ public class YgMdServiceImpl implements YgMdService{
 
 	@Override
 	public YgMd selectOne(YgMd ygmd) {
-		// TODO 
-		return ygMdMapper.selectOne(ygmd);
+		return ygMdMapper.selectOne(ygmd.getName(), ygmd.getGhao());
 	}
 }

@@ -3,13 +3,14 @@
 <generatorConfiguration>
   <context id="DB2Tables">
     <jdbcConnection connectionURL="jdbc:mysql://127.0.0.1:3306/sldk" driverClass="com.mysql.jdbc.Driver" password="dabby@2011" userId="root" />
-    <javaModelGenerator targetPackage="com.cmsz.sldk.model" targetProject="cmsz-sldk" />
-    <sqlMapGenerator targetPackage="mapping" targetProject="cmsz-sldk/src/main/resources" />
-    <javaClientGenerator targetPackage="com.cmsz.sldk.mapper" targetProject="cmsz-sldk" type="XMLMAPPER" />
+    <javaModelGenerator targetPackage="com.cmsz.sldk.model" targetProject="sldk" />
+    <sqlMapGenerator targetPackage="mapping" targetProject="sldk/src/main/resources" />
+    <javaClientGenerator targetPackage="com.cmsz.sldk.mapper" targetProject="sldk" type="XMLMAPPER" />
     <!-- <table schema="???" tableName="yg_info">
       <columnOverride column="???" property="???" />
     </table> -->
     <table tableName="yg_info" domainObjectName="YgInfo" enableCountByExample="false" enableUpdateByExample="false" enableDeleteByExample="false" enableSelectByExample="false" selectByExampleQueryId="false"></table>
 	<table tableName="yg_md" domainObjectName="YgMd" enableCountByExample="false" enableUpdateByExample="false" enableDeleteByExample="false" enableSelectByExample="false" selectByExampleQueryId="false"></table>
+  	<table tableName="dk_state" domainObjectName="DkState" enableCountByExample="false" enableUpdateByExample="false" enableDeleteByExample="false" enableSelectByExample="false" selectByExampleQueryId="false"></table>
   </context>
 </generatorConfiguration>

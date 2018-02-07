@@ -33,6 +33,8 @@ spring:
 mybatis:
   mapper-locations: classpath:mapping/*.xml
   type-aliases-package: com.cmsz.sldk.model
+  configuration:
+    mapUnderscoreToCamelCase: true
 
 #pagehelper分页插件
 pagehelper:
@@ -51,6 +53,8 @@ weixin:
   baseinfo:
      appid: wx9e13562091ff4bdb
      secret: 7fd80ef83cd2516f575321806ef83e6f
-  EARTH_RADIUS:
-     6378.137 
+  EARTH_RADIUS: 6378.137
+  GT_LATITUDE: 23.129163 #22.529550552368164 #23.129163
+  GT_LONGITUDE: 113.0 #114.03778839111328  #113.0
+  GT_DISTANCE: 0.050
      

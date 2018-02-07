@@ -35,8 +35,17 @@ public class weixinApiController  {
 	@Value("${weixin.baseinfo.secret}")
 	private String secret;
 	
-	@Value("${weixinApi.EARTH_RADIUS}")
-	static double EARTH_RADIUS;
+	@Value("${weixin.EARTH_RADIUS}")
+	private double EARTH_RADIUS;
+	
+	@Value("${weixin.GT_LATITUDE}")
+	private double GT_LATITUDE;
+	
+	@Value("${weixin.GT_LONGITUDE}")
+	private double GT_LONGITUDE;
+	
+	@Value("${weixin.GT_DISTANCE}")
+	private double GT_DISTANCE;
 	
 	/**
 	 * 获取openid
@@ -127,45 +136,24 @@ public class weixinApiController  {
 	}
 	
 	@ResponseBody
-	@RequestMapping("/distance/{openid}/{latitude}/{longitude}/{hdid}")
+	@RequestMapping("/distance/{openid}/{latitude}/{longitude}")
 	public String distance(@PathVariable("openid") String openid, 
 			@PathVariable("latitude") Double latitude, 
-			@PathVariable("longitude") Double longitude, 
-			@PathVariable("hdid") String hdid, HttpServletRequest request) {
+			@PathVariable("longitude") Double longitude, HttpServletRequest request) {
 		
-		Long id = Long.parseLong(hdid);
 		boolean result = false;
 		logger.info("openid: "+openid);
 		logger.info("latitude: "+latitude);
 		logger.info("longitude: "+longitude);
-//		QdLeader qdLeader = qdLeaderService.selectLeader(id);
-//		if (null==qdLeader)
-//			return String.valueOf(false);
-//		if (openid==qdLeader.getOpenid() || openid.equals(qdLeader.getOpenid())) {
-//			qdLeader.setLatitude(latitude);
-//			qdLeader.setLongitude(longitude);
-//			result = qdLeaderService.updateById(qdLeader);
-//			return String.valueOf(result);
-//		}
-//		if (null==qdLeader.getLatitude() || null==qdLeader.getLongitude()) {
-//			return String.valueOf(false);
-//		}
-//		
-//		String str = qdLeader.getLatitude().toString()+"|"+qdLeader.getLongitude();
-//		logger.info("---"+str);
-//		double dis = getDistance(latitude, longitude, qdLeader.getLatitude(), qdLeader.getLongitude());
-//		logger.info(dis+"");
-//		HdBaseInfo hdBaseInfo = hdBaseInfoService.selectById(id);
-//		if (dis <= hdBaseInfo.getQdDistance()) {
-//			QdLeader entity = new QdLeader();
-//			entity.setHdid(id);
-//			entity.setOpenid(openid);
-//			entity.setLatitude(latitude);
-//			entity.setLongitude(longitude);
-//			entity.setLeaderStatus(LeaderStateEnum.NOTLEADER.getStatus());
-//			qdLeaderService.insert(entity);
-//			result = true;
-//		}
+		logger.info("GT_LATITUDE:"+GT_LATITUDE);
+		logger.info("GT_LONGITUDE:"+GT_LONGITUDE);
+		logger.info("EARTH_RADIUS:"+EARTH_RADIUS);
+		
+		double dis = getDistance(latitude, longitude, GT_LATITUDE, GT_LONGITUDE);
+		logger.info(dis+"");
+		if (dis <= GT_DISTANCE) {
+			result = true;
+		}
 			
 		return String.valueOf(result);
 	}
@@ -217,8 +205,8 @@ public class weixinApiController  {
      * @param lng2 商家纬度
      * @return
      */
-    public static double getDistance(double lat1, double lng1, double lat2, double lng2) {
-          
+    public double getDistance(double lat1, double lng1, double lat2, double lng2) {
+        
         double radLat1 = rad(lat1);
         double radLat2 = rad(lat2);
         double difference = radLat1 - radLat2;
