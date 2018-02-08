@@ -4,21 +4,23 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.util.HashMap;
-import java.util.Map;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import javax.imageio.ImageIO;
 import javax.servlet.http.HttpServletRequest;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.cmsz.sldk.model.PzRecord;
+import com.cmsz.sldk.service.PzRecordService;
 import com.xiaoleilu.hutool.http.HttpRequest;
 import com.xiaoleilu.hutool.http.HttpResponse;
 import com.xiaoleilu.hutool.json.JSONObject;
@@ -46,6 +48,9 @@ public class weixinApiController  {
 	
 	@Value("${weixin.GT_DISTANCE}")
 	private double GT_DISTANCE;
+	
+	@Autowired
+	private PzRecordService pzRecordService;
 	
 	/**
 	 * 获取openid
@@ -82,59 +87,6 @@ public class weixinApiController  {
 		return openid;
 	}
 	
-	/**
-	 * 获取活动报名小程序码
-	 * @param hdid	活动ID
-	 * @param request
-	 * @return
-	 * @throws UnsupportedEncodingException
-	 */
-	@ResponseBody
-	@RequestMapping("/getwxacodeunlimit/{page}/{hdid}")
-	public byte[] getwxacodeunlimit(@PathVariable("page") String page, @PathVariable("hdid") String hdid, 
-			HttpServletRequest request) throws UnsupportedEncodingException {
-		logger.info(page+"------"+hdid);
-		page = page.replace('.', '/');
-		if (hdid.contains("-"))
-			hdid = hdid.substring(0,hdid.indexOf('-'));
-		
-		String gettoken = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=APPID&secret=APPSECRET";
-		gettoken = gettoken.replace("APPID", appid).replace("APPSECRET", secret);
-		HttpRequest get = HttpRequest.get( gettoken );
-        get.charset( "UTF-8" );
-        HttpResponse resp = get.execute();
-        if (resp.getStatus() != 200) {
-        	System.out.println("error");
-        }
-        logger.info(resp.body());
-        JSONObject ac = new JSONObject( resp.body() );
-        String access_token = ac.getStr("access_token");
-        logger.info(access_token);
-        
-        String getwxacodeunlimit = "https://api.weixin.qq.com/wxa/getwxacodeunlimit?access_token=ACCESS_TOKEN";
-		getwxacodeunlimit = getwxacodeunlimit.replace("ACCESS_TOKEN", access_token);
-		HttpRequest post2 = HttpRequest.post( getwxacodeunlimit );
-		post2.charset( "UTF-8" );
-		Map<String, Object> jsonMap = new HashMap<String,Object>();
-		String scene = hdid;
-		logger.info("scene: "+scene);
-		jsonMap.put("scene", scene);
-		//报名小程序码："page/component/pages/signupinfo/signupinfo"
-		//签到小程序码："page/component/pages/sign-info/sign-info"
-		jsonMap.put("page", page);
-		jsonMap.put("width", 430);
-		jsonMap.put("auto_color", true);
-		post2.body( new JSONObject( jsonMap ) );
-		logger.info(getwxacodeunlimit+"\n"+ new JSONObject( jsonMap ));
-        HttpResponse resp2 = post2.execute();
-        if (resp2.getStatus() != 200) {
-        	logger.info("error");
-        }
-        byte[] rb = resp2.bodyBytes();
-        
-        return rb;
-	}
-	
 	@ResponseBody
 	@RequestMapping("/distance/{openid}/{latitude}/{longitude}")
 	public String distance(@PathVariable("openid") String openid, 
@@ -153,6 +105,15 @@ public class weixinApiController  {
 		logger.info(dis+"");
 		if (dis <= GT_DISTANCE) {
 			result = true;
+			//插入拍照记录
+			SimpleDateFormat date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+			String sendpicTime = date.format(new Date());
+			PzRecord pzRecord = new PzRecord();
+			pzRecord.setOpenid(openid);
+			pzRecord.setLatitude(latitude);
+			pzRecord.setLongitude(longitude);
+			pzRecord.setSendpicTime(sendpicTime);
+			pzRecordService.insert(pzRecord);
 		}
 			
 		return String.valueOf(result);

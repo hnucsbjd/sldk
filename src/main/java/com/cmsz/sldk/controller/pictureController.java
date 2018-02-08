@@ -24,9 +24,11 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.cmsz.sldk.entity.vo.ResultState;
 import com.cmsz.sldk.entity.vo.ResultStatusEnum;
-import com.cmsz.sldk.model.DkState;
+import com.cmsz.sldk.model.CollectState;
+import com.cmsz.sldk.model.DkRecord;
 import com.cmsz.sldk.model.YgInfo;
-import com.cmsz.sldk.service.DkStateService;
+import com.cmsz.sldk.service.CollectStateService;
+import com.cmsz.sldk.service.DkRecordService;
 import com.cmsz.sldk.service.YgInfoService;
 
 @RestController
@@ -44,9 +46,12 @@ public class pictureController {
 	private YgInfoService ygInfoService;
 	
 	@Autowired
-	private DkStateService dkStateService;
+	private CollectStateService collectStateService;
 	
-	public static final double Threshold = 0.50; //置信度阈值
+	@Autowired
+	private DkRecordService dkRecordService;
+	
+	public static final double Threshold = 0.001; //置信度阈值
 	public static final String dockerName = "detect_container"; //容器名
 	//docker路径
 	public static final String classifier_path="/root/openface/demos/classifier.py"; //分类脚本
@@ -65,11 +70,11 @@ public class pictureController {
 	public boolean isCollected(@PathVariable("openid") String openid) {
 		boolean result = false;
 		
-		DkState dkState = dkStateService.selectByOpenid(openid);
-		if (null == dkState)
+		CollectState collectState = collectStateService.selectByOpenid(openid);
+		if (null == collectState)
 			return false;
-		int currentNum = dkState.getCurrentNum();
-		int maxNum = dkState.getMaxNum();
+		int currentNum = collectState.getCurrentNum();
+		int maxNum = collectState.getMaxNum();
 		
 		if (currentNum >= maxNum)
 			result = true;
@@ -81,11 +86,11 @@ public class pictureController {
 	@RequestMapping("/neednum/{openid}")
 	public Integer needNum(@PathVariable("openid") String openid) {
 		
-		DkState dkState = dkStateService.selectByOpenid(openid);
-		if (null == dkState)
+		CollectState collectState = collectStateService.selectByOpenid(openid);
+		if (null == collectState)
 			return MAX_NUM;
-		int currentNum = dkState.getCurrentNum();
-		int maxNum = dkState.getMaxNum();
+		int currentNum = collectState.getCurrentNum();
+		int maxNum = collectState.getMaxNum();
 		
 		return (maxNum-currentNum);
 	}
@@ -108,17 +113,17 @@ public class pictureController {
     	
         if (saveFileRes.getResult().getStatus() == ResultStatusEnum.SUCCESS.getStatus()) {
     		//采集照片成功，采集照片数量减一
-        	if (dkStateService.isExist(openid)) {
-        		DkState dkState = dkStateService.selectByOpenid(openid);
-        		int currentNum = dkState.getCurrentNum() + 1;
-        		result = dkStateService.updateDkState(openid, currentNum);
+        	if (collectStateService.isExist(openid)) {
+        		CollectState collectState = collectStateService.selectByOpenid(openid);
+        		int currentNum = collectState.getCurrentNum() + 1;
+        		result = collectStateService.updateCollectState(openid, currentNum);
         	} else {
-        		DkState dkState = new DkState();
-        		dkState.setCurrentNum(1);
-        		dkState.setOpenid(openid);
-        		dkState.setGhao(ygInfo.getGhao());
-        		dkState.setMaxNum(MAX_NUM);
-        		result = dkStateService.insert(dkState);
+        		CollectState collectState = new CollectState();
+        		collectState.setCurrentNum(1);
+        		collectState.setOpenid(openid);
+        		collectState.setGhao(ygInfo.getGhao());
+        		collectState.setMaxNum(MAX_NUM);
+        		result = collectStateService.insert(collectState);
         	}
     	}
     	
@@ -152,8 +157,23 @@ public class pictureController {
     		String dest_path;//备份路径
     		if(result==true) {
     			dest_path = local_success_bak + ygInfo.getGhao()+"/";
+    			//打卡成功，保存打卡记录
+    			SimpleDateFormat date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    			String dkTime = date.format(new Date());
+    			DkRecord dkRecord = new DkRecord();
+    			dkRecord.setDkTime(dkTime);
+    			dkRecord.setOpenid(openid);
+    			dkRecordService.insert(dkRecord);
     		}else {
     			dest_path = local_fail_bak + ygInfo.getGhao()+"/";
+    			//打卡成功，保存打卡记录
+    			System.out.println("--------------------------------false: ---");
+    			SimpleDateFormat date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    			String dkTime = date.format(new Date());
+    			DkRecord dkRecord = new DkRecord();
+    			dkRecord.setDkTime(dkTime);
+    			dkRecord.setOpenid(openid);
+    			dkRecordService.insert(dkRecord);
     		}
     		filebak(source_file, dest_path);//备份文件
     	}
