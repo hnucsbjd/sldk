@@ -57,4 +57,15 @@ weixin:
   GT_LATITUDE: 23.129163 #22.529550552368164 #23.129163
   GT_LONGITUDE: 113.0 #114.03778839111328  #113.0
   GT_DISTANCE: 0.050
-     
+
+dockerinfo:
+  Threshold: 0.001
+  dockerName: detect_container
+  classifier_path: /root/openface/demos/classifier.py
+  pkl_path: /root/openface/share/train_repre/classifier.pkl
+  recognition_path: /root/openface/share/tmp/
+  local_collect_path: /var/openface/registerphoto/
+  local_recognition_path: /var/openface/tmp/
+  local_success_bak: /var/openface/success/
+  local_fail_bak: /var/openface/fail/
+  MAX_NUM: 20

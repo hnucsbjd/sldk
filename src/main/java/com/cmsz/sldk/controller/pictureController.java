@@ -15,6 +15,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -51,19 +52,28 @@ public class pictureController {
 	@Autowired
 	private DkRecordService dkRecordService;
 	
-	public static final double Threshold = 0.001; //置信度阈值
-	public static final String dockerName = "detect_container"; //容器名
+	@Value("${dockerinfo.Threshold}")
+	private static double Threshold; //置信度阈值
+	@Value("${dockerinfo.dockerName}")
+	public static String dockerName; //容器名
 	//docker路径
-	public static final String classifier_path="/root/openface/demos/classifier.py"; //分类脚本
-	public static final String pkl_path = "/root/openface/share/train_repre/classifier.pkl"; //分类器
-	public static final String recognition_path="/root/openface/share/tmp/"; //打卡人照片存放路径，识别用
+	@Value("${dockerinfo.classifier_path}")
+	public static String classifier_path; //分类脚本
+	@Value("${dockerinfo.pkl_path}")
+	public static String pkl_path; //分类器
+	@Value("${dockerinfo.recognition_path}")
+	public static String recognition_path; //打卡人照片存放路径，识别用
 	//虚拟机路径
-	public static final String local_collect_path="/var/openface/registerphoto/"; //打卡人照片存放路径，训练集
-	public static final String local_recognition_path = "/var/openface/tmp/";
-	public static final String local_success_bak = "/var/openface/success/";
-	public static final String local_fail_bak = "/var/openface/fail/";
-	
-	public static final Integer MAX_NUM = 20;
+	@Value("${dockerinfo.local_collect_path}")
+	public static String local_collect_path; //打卡人照片存放路径，训练集
+	@Value("${dockerinfo.local_recognition_path}")
+	public static String local_recognition_path; //打卡识别照片存放路径
+	@Value("${dockerinfo.local_success_bak}") 
+	public static String local_success_bak; //打卡成功后，照片备份路径
+	@Value("${dockerinfo.local_fail_bak}")
+	public static String local_fail_bak; //打卡识别后，照片备份路径
+	@Value("${dockerinfo.MAX_NUM}")
+	public static Integer MAX_NUM; //训练照片数量
 	
 	@ResponseBody
 	@RequestMapping("/iscollected/{openid}")
@@ -153,27 +163,24 @@ public class pictureController {
     		result = recognition(ygrecognitionPath, ygInfo.getGhao());
     		logger.info("-------recognition:"+result);
     		
+    		//打卡成功，保存打卡记录
+    		if (result) {
+    			SimpleDateFormat date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    			String dkTime = date.format(new Date());
+    			DkRecord dkRecord = new DkRecord();
+    			dkRecord.setDkTime(dkTime);
+    			dkRecord.setOpenid(openid);
+    			dkRecordService.insert(dkRecord);
+    		}
+    		
+    		//完成打卡后，将文件移动到成功或失败目录下
     		String source_file = saveFilePath + filename; //经过打卡识别的照片
     		String dest_path;//备份路径
     		if(result==true) {
     			dest_path = local_success_bak + ygInfo.getGhao()+"/";
-    			//打卡成功，保存打卡记录
-    			SimpleDateFormat date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-    			String dkTime = date.format(new Date());
-    			DkRecord dkRecord = new DkRecord();
-    			dkRecord.setDkTime(dkTime);
-    			dkRecord.setOpenid(openid);
-    			dkRecordService.insert(dkRecord);
+    			
     		}else {
     			dest_path = local_fail_bak + ygInfo.getGhao()+"/";
-    			//打卡成功，保存打卡记录
-    			System.out.println("--------------------------------false: ---");
-    			SimpleDateFormat date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-    			String dkTime = date.format(new Date());
-    			DkRecord dkRecord = new DkRecord();
-    			dkRecord.setDkTime(dkTime);
-    			dkRecord.setOpenid(openid);
-    			dkRecordService.insert(dkRecord);
     		}
     		filebak(source_file, dest_path);//备份文件
     	}
